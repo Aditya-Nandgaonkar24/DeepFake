@@ -1,0 +1,56 @@
+import os
+
+# Suppress Albumentations update check to prevent timeout warnings during DataLoader multi-processing
+os.environ["ALBUMENTATIONS_DISABLE_VERSION_CHECK"] = "1"
+
+# Centralized configuration to avoid scattering constants across files
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Model Architecture
+SEQUENCE_LENGTH = 15
+IMAGE_SIZE = 224
+SPATIAL_FEATURES = 960
+TEMPORAL_INPUT_DIM = SPATIAL_FEATURES * 2  # 1920 (spatial + diff)
+GRU_HIDDEN_DIM = 256
+GRU_NUM_LAYERS = 2
+USE_AUDIO_BRANCH = False
+AUDIO_SAMPLE_RATE = 16000
+AUDIO_N_MELS = 64
+AUDIO_EMBED_DIM = 128
+
+# Training Defaults
+DEFAULT_BATCH_SIZE = 4
+DEFAULT_ACCUMULATE_STEPS = 4
+DEFAULT_LR = 1e-4
+DEFAULT_EPOCHS = 30
+DEFAULT_PATIENCE = 5
+DEFAULT_WEIGHT_DECAY = 1e-3
+GRAD_CLIP_MAX_NORM = 1.0
+
+# DataLoader
+NUM_WORKERS = 4
+
+# Data Paths
+DATASET_RAW = os.path.join(BASE_DIR, "dataset")
+DATASET_PREPROCESSED = os.path.join(BASE_DIR, "dataset_preprocessed")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+ONNX_MODEL_NAME = os.path.join(BASE_DIR, "detector_model.onnx")
+
+# Preprocessing
+PREPROCESS_CANDIDATE_MULTIPLIER = 3
+PREPROCESS_MIN_CANDIDATE_FRAMES = 24
+PREPROCESS_FACE_MARGIN_RATIO = 0.20
+PREPROCESS_MOUTH_HEIGHT_RATIO = 0.45
+PREPROCESS_MIN_FACE_AREA_RATIO = 0.015
+PREPROCESS_MIN_DETECTION_CONFIDENCE = 0.90
+
+# ImageNet Normalization (MobileNet standard)
+NORMALIZE_MEAN = (0.485, 0.456, 0.406)
+NORMALIZE_STD = (0.229, 0.224, 0.225)
+
+# Inference
+MAX_UPLOAD_SIZE_MB = 100
+INFERENCE_THRESHOLD = 0.33
+INFERENCE_UNCERTAINTY_MARGIN = 0.05
+TIMELINE_SEGMENT_THRESHOLD = 0.55
+TIMELINE_TOP_K_FRAMES = 3

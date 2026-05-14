@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+image_service/static/uploads/*
+video_service/dataset/
+video_service/dataset_preprocessed/
+video_service/logs/
+video_service/web/temp_*
+
+*.tmp
+desktop.ini
+Thumbs.db

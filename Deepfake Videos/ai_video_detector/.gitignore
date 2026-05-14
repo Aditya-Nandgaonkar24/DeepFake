@@ -1,0 +1,36 @@
+# Generated assets
+dataset/
+dataset_preprocessed/
+logs/
+*.onnx
+
+# Temp files from web inference
+web/temp_*
+
+# Checkpoints
+*.pth
+
+# Training artifacts
+confusion_matrix.png
+training_evaluation_plots.png
+skipped_videos.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

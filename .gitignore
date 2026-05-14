@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment Variables
+.env
+.flaskenv
+
+# Media / Dataset folders
+# DO NOT ignore the top-level "Deepfake Images" or "Deepfake Videos"
+# Ignore specific large files instead
+dataset_preprocessed/
+*.mp4
+*.avi
+*.mkv
+
+# Ignore models over 50MB to prevent GitHub push errors
+*.pth
+*.onnx
+
+# Node / JS
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# LaTeX
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc

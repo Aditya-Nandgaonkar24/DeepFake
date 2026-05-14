@@ -1,0 +1,305 @@
+
+===============================================================================
+                        AI IMAGE DETECTOR ARCHITECTURE
+===============================================================================
+
+===============================================================================
+                           PROJECT STRUCTURE
+===============================================================================
+
+  ai_image_detector/
+  |-- api/
+  |   |-- __init__.py
+  |   +-- routes.py                   <-- Flask API + Rate Limiter + Ensemble
+  |-- core/
+  |   |-- __init__.py
+  |   |-- config.py                   <-- Centralized Configuration
+  |   |-- analyzers/
+  |   |   |-- __init__.py
+  |   |   |-- ela_analyzer.py         <-- Error Level Analysis (JPEG)
+  |   |   |-- frequency_analyzer.py   <-- FFT Frequency Analysis
+  |   |   |-- noise_analyzer.py       <-- Noise Pattern Analysis
+  |   |   |-- metadata_analyzer.py    <-- EXIF/ICC Metadata Analysis
+  |   |   +-- pixel_analyzer.py       <-- Pixel Statistics Analysis
+  |   +-- ml/
+  |       |-- __init__.py
+  |       |-- train_faces.py          <-- Training for 140K Faces dataset
+  |       |-- train_model.py          <-- Training for CIFAKE dataset
+  |       +-- evaluate_model.py       <-- Model Evaluation
+  |-- frontend/
+  |   +-- index.html                  <-- Web UI + Chart.js Visualizations
+  |-- models/
+  |   |-- best_model.pth              <-- Best Trained Model Checkpoint
+  |   +-- plots/                      <-- Auto-generated Evaluation Plots
+  |       |-- accuracy_loss_curves.png
+  |       |-- confusion_matrix.png
+  |       |-- roc_curve.png
+  |       +-- dataset_distribution.png
+  |-- datasets/
+  |   |-- faces/                      <-- 140K Real & Fake Faces (256x256)
+  |   |-- train/                      <-- CIFAKE data (legacy)
+  |   +-- download_datasets.py        <-- Kaggle Dataset Downloader
+  |-- run.py                          <-- Main Application Entry Point
+  |-- test_setup.py                   <-- System Self-Test Script
+  |-- Dockerfile                      <-- Production Docker Container
+  +-- requirements.txt                <-- Python Dependencies
+
+===============================================================================
+                              SYSTEM OVERVIEW
+===============================================================================
+
+  +-------------------------------------------------------------------------+
+  |                          FRONTEND (Browser)                              |
+  |                                                                          |
+  |  index.html + Chart.js 4.4                                              |
+  |  * Drag & Drop Upload                                                   |
+  |  * Image Preview                                                        |
+  |  * Dynamic Loading Animation                                            |
+  |  * Results Visualization:                                                |
+  |    - Animated Score Bars (6 analyzers)                                   |
+  |    - Bar Chart (Analyzer Scores)                                         |
+  |    - Pie Chart (Classification Probabilities)                            |
+  |    - Radar Chart (Component Analysis)                                    |
+  |                                                                          |
+  |                       | HTTP POST /api/analyze                           |
+  |                       v                                                  |
+  +-------------------------------------------------------------------------+
+
+  +-------------------------------------------------------------------------+
+  |                       BACKEND (Flask Server)                             |
+  |                                                                          |
+  |  run.py --> api/routes.py                                               |
+  |  * In-Memory Image Processing (Zero Disk I/O)                           |
+  |  * ThreadPoolExecutor (6 Parallel Analyzers)                             |
+  |  * SHA-256 Result Caching (LRU, 100 entries)                            |
+  |  * Rate Limiting: 5 req/min, 200 req/day                                |
+  |  * Decompression Bomb Protection (100M pixel limit)                     |
+  |  * UUID Temp Files (for ML model only)                                  |
+  |                                                                          |
+  |            +----------+----------+----------+----------+----------+      |
+  |            |          |          |          |          |          |      |
+  |            v          v          v          v          v          v      |
+  |       Frequency     Noise    Metadata    Pixel       ELA       Model    |
+  |       Analyzer     Analyzer  Analyzer   Analyzer   Analyzer  Predictor  |
+  |       (FFT)        (Hi-pass) (EXIF/ICC) (Stats)    (JPEG)    (B0 CNN)   |
+  +-------------------------------------------------------------------------+
+
+===============================================================================
+                           ANALYSIS MODULES
+===============================================================================
+
+  Layer 1: SIGNAL LEVEL ANALYSIS
+  --------------------------------------------------------------------------
+
+  [frequency_analyzer.py]
+  * 2D FFT (Fast Fourier Transform)
+  * High-frequency energy ratio
+  * Radial spectrum distribution
+  * Peak anomaly detection
+  * Spectral entropy
+  --> Output: frequency_score (0-100)
+
+  [noise_analyzer.py]
+  * High-pass filtering
+  * Noise residual extraction
+  * Noise uniformity measure
+  * Spatial correlation
+  * Grain structure analysis
+  --> Output: noise_score (0-100)
+
+  [pixel_analyzer.py]
+  * Color distribution analysis
+  * Saturation statistics
+  * Brightness distribution
+  * Contrast ratio
+  * Histogram entropy
+  --> Output: pixel_score (0-100)
+
+  [metadata_analyzer.py]
+  * EXIF data extraction (Camera, GPS, DateTime)
+  * ICC Color Profile detection
+  * Software identification (AI generator matching)
+  * Social media stripping detection (neutral score)
+  * Authenticity verification
+  --> Output: metadata_score (0-100)
+
+  [ela_analyzer.py]
+  * JPEG re-compression at quality 90%
+  * Error level difference calculation
+  * Variance and standard deviation of error map
+  * Uniformity detection (AI images = uniform error)
+  * Manipulation region detection
+  --> Output: ela_score (0-100)
+
+  Layer 2: SEMANTIC LEVEL ANALYSIS
+  --------------------------------------------------------------------------
+
+  [train_faces.py + FaceDetector]
+
+  +------------------------------------------------------+
+  |  EfficientNet-B0 Backbone                             |
+  |  * Pre-trained on ImageNet (1.2M images)             |
+  |  * ~5.3M parameters                                  |
+  |  * 256x256 input resolution                          |
+  +------------------------------------------------------+
+                       |
+                       v
+  +------------------------------------------------------+
+  |  Custom Classifier Head                               |
+  |  * Dropout (0.3)                                      |
+  |  * FC Layer (1280 --> 256)                             |
+  |  * ReLU Activation                                    |
+  |  * Dropout (0.2)                                      |
+  |  * FC Layer (256 --> 2 classes)                        |
+  +------------------------------------------------------+
+                       |
+                       v
+  +------------------------------------------------------+
+  |  Output: Binary Classification                        |
+  |  0: Real                                              |
+  |  1: Fake (AI-Generated)                               |
+  |  --> Output: class + probabilities                    |
+  +------------------------------------------------------+
+
+===============================================================================
+                        SCORE COMBINATION ENGINE
+===============================================================================
+
+  combine_confidence_scores()
+
+  ADAPTIVE WEIGHTING (based on image resolution):
+
+  For high-res images (> 128px):
+    Model weight is scaled down proportionally to compensate for
+    domain shift (training on 256px faces vs arbitrary input).
+    Freed weight is redistributed to physics-based analyzers.
+
+  Base Weights:
+    Model:     70%  <-- Deep Learning (EfficientNet-B0)
+    Frequency:  6%  <-- FFT Analysis
+    Noise:      6%  <-- Noise Pattern
+    Pixel:      6%  <-- Pixel Stats
+    Metadata:   6%  <-- EXIF/ICC Data
+    ELA:        6%  <-- Error Level Analysis
+    TOTAL:    100%
+
+  Classification Rules:
+  * Score >= 70  -->  REAL IMAGE        (High Confidence)
+  * Score 50-69  -->  UNCERTAIN         (Medium Confidence)
+  * Score < 50   -->  AI-GENERATED      (High Confidence)
+
+===============================================================================
+                          TRAINING PIPELINE
+===============================================================================
+
+  Dataset: 140K Real & Fake Faces (256x256)
+  Source: https://www.kaggle.com/datasets/xhlulu/140k-real-and-fake-faces
+  |-- train/  (100K images: 50K real + 50K fake)
+  |-- valid/  (20K images)
+  +-- test/   (20K images)
+       |
+       v
+  Data Augmentation:
+  * Random horizontal flip
+  * Random rotation (+/-10 deg)
+  * Color jitter (brightness, contrast, saturation)
+  * Resize to 256x256
+  * Normalize (ImageNet mean/std)
+       |
+       v
+  EfficientNet-B0 Training:
+  * Optimizer: Adam (lr=0.001)
+  * Loss: CrossEntropyLoss
+  * Mixed Precision: torch.amp (float16 on GPU)
+  * LR Scheduler: ReduceLROnPlateau
+  * Batch Size: 32 (GPU) / 16 (CPU)
+  * Epochs: 1
+       |
+       v
+  Post-Training Evaluation (auto-generated):
+  * Accuracy & Loss Curves  --> models/plots/accuracy_loss_curves.png
+  * Confusion Matrix        --> models/plots/confusion_matrix.png
+  * ROC Curve               --> models/plots/roc_curve.png
+  * Dataset Distribution    --> models/plots/dataset_distribution.png
+       |
+       v
+  Save Best Model --> models/best_model.pth
+
+===============================================================================
+                        SECURITY FEATURES
+===============================================================================
+
+  * Flask-Limiter: 5 requests/minute, 200/day on /api/analyze
+  * Decompression Bomb Protection: PIL.Image.MAX_IMAGE_PIXELS = 100M
+  * In-memory image processing (minimal disk writes)
+  * UUID-based temp filenames (no path traversal)
+  * CORS configured (restrict in production)
+  * Input validation: file type + decode check
+
+===============================================================================
+                FRONTEND VISUALIZATION (Chart.js)
+===============================================================================
+
+  After image analysis, the frontend renders:
+
+  1. SCORE BARS: Animated bars for all 6 analyzers
+  2. BAR CHART: Side-by-side comparison of analyzer scores
+  3. PIE CHART: Classification probability breakdown (Real vs Fake)
+  4. RADAR CHART: Spider web of component analysis strengths
+
+===============================================================================
+                          KEY TECHNOLOGIES
+===============================================================================
+
+  Backend:
+  * Python 3.12 (CUDA GPU support)
+  * Flask 3.0 + Flask-Limiter (Web Server + Rate Limiting)
+  * PyTorch 2.5.1+cu121 (CUDA-accelerated Deep Learning)
+  * EfficientNet-B0 (CNN Architecture)
+  * OpenCV (Image Processing)
+  * Matplotlib + scikit-learn (Evaluation Plots)
+  * NumPy, SciPy (Numerical Computing)
+  * Piexif (EXIF Metadata)
+
+  Frontend:
+  * HTML5
+  * CSS3 (Gradient Design)
+  * Vanilla JavaScript
+  * Chart.js 4.4 (Bar, Pie, Radar Charts)
+  * Fetch API (Backend Communication)
+
+  Signal Processing:
+  * 2D Fast Fourier Transform (FFT)
+  * High-pass Filtering
+  * Error Level Analysis (JPEG re-compression)
+  * Statistical Analysis
+  * Histogram Analysis
+
+  Machine Learning:
+  * Transfer Learning (ImageNet --> 140K Faces)
+  * Mixed Precision Training (AMP)
+  * Data Augmentation
+  * Cross-Entropy Loss
+  * Adam Optimization
+
+  Deployment:
+  * Docker (NVIDIA CUDA base image)
+  * Gunicorn (4 workers, production WSGI)
+
+===============================================================================
+
+  HOW TO RUN:
+
+  # From project root: ai_image_detector/ai_image_detector/
+  $env:PYTHONPATH = "."
+
+  # Train the model (GPU recommended):
+  py -3.12 core/ml/train_faces.py
+
+  # Start the web server:
+  py -3.12 run.py
+
+  # Open frontend:
+  Open frontend/index.html in browser
+
+===============================================================================

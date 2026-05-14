@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENTINEL — Deepfake Forensics Lab</title>
+    <meta name="description" content="AI-powered deepfake detection using spatial-temporal deep learning forensics.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- Animated grid background -->
+    <div class="cyber-grid" aria-hidden="true"></div>
+    <div class="scan-line" aria-hidden="true"></div>
+
+    <main class="app">
+        <!-- Top bar -->
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">SENTINEL</span>
+                    <span class="brand-sub">deepfake forensics lab</span>
+                </div>
+            </div>
+            <div class="sys-status" id="system-status">
+                <span class="sys-led"></span>
+                <span>INITIALIZING</span>
+            </div>
+        </header>
+
+        <!-- Mode selector -->
+        <div class="mode-switch">
+            <button class="mode-btn active" data-mode="image">
+                <span class="mode-icon">◻</span> IMAGE SCAN
+            </button>
+            <button class="mode-btn" data-mode="video">
+                <span class="mode-icon">▶</span> VIDEO SCAN
+            </button>
+            <div class="mode-slider"></div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-grid">
+            <!-- Left: Upload -->
+            <div class="upload-col">
+                <form class="upload-zone active" id="image-form">
+                    <label class="drop-area" for="image-input" id="image-drop">
+                        <div class="drop-ring">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+                        </div>
+                        <span class="drop-label">DROP IMAGE HERE</span>
+                        <span class="drop-sub">or click to browse · JPG, PNG, SVG</span>
+                        <input id="image-input" type="file" accept=".jpg,.jpeg,.png,.svg,image/*">
+                    </label>
+                    <img id="image-preview" class="file-preview" alt="">
+                    <button class="scan-btn" type="submit">
+                        <span class="scan-btn-text">▷ INITIATE SCAN</span>
+                        <span class="scan-btn-glow"></span>
+                    </button>
+                </form>
+
+                <form class="upload-zone" id="video-form">
+                    <label class="drop-area" for="video-input" id="video-drop">
+                        <div class="drop-ring">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                        </div>
+                        <span class="drop-label">DROP VIDEO HERE</span>
+                        <span class="drop-sub">or click to browse · MP4, MOV, AVI, MKV</span>
+                        <input id="video-input" type="file" accept="video/*">
+                    </label>
+                    <video id="video-preview" class="file-preview" controls></video>
+                    <button class="scan-btn" type="submit">
+                        <span class="scan-btn-text">▷ INITIATE SCAN</span>
+                        <span class="scan-btn-glow"></span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right: Results -->
+            <div class="results-col" id="results">
+                <div class="idle-screen">
+                    <div class="idle-radar">
+                        <div class="radar-ring r1"></div>
+                        <div class="radar-ring r2"></div>
+                        <div class="radar-ring r3"></div>
+                        <div class="radar-sweep"></div>
+                        <div class="radar-dot"></div>
+                    </div>
+                    <p class="idle-text">AWAITING TARGET</p>
+                    <p class="idle-sub">Upload media to begin forensic analysis</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="bottombar">
+            <span>MobileNetV3 + Bi-GRU · ONNX Runtime · Spatial-Temporal Fusion</span>
+        </footer>
+    </main>
+
+    <canvas id="confetti-canvas"></canvas>
+    <script src="/static/app.js"></script>
+</body>
+</html>

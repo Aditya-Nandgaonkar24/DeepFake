@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Detector</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f0f0;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8e8ff;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preview-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .result-header {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .final-verdict {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .verdict-score {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .verdict-label {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .metric-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: width 1s ease;
+        }
+
+        .model-prediction {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .probability-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .image-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .badge-high {
+            background: #4caf50;
+            color: white;
+        }
+
+        .badge-medium {
+            background: #ff9800;
+            color: white;
+        }
+
+        .badge-low {
+            background: #f44336;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 AI Image Detector</h1>
+            <p>Advanced Multi-Layer Analysis System</p>
+        </div>
+
+        <div class="main-card">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">Drag & Drop your image here</div>
+                <div class="upload-subtext">or click to browse</div>
+                <div class="upload-subtext" style="margin-top: 10px;">Supported: JPG, PNG, JPEG, SVG</div>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.svg" />
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <img id="previewImage" class="preview-image" />
+                <div style="text-align: center;">
+                    <button class="btn" id="analyzeBtn">Analyze Image</button>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>Analyzing image... Please wait</div>
+                <div id="loadingStatusText" style="margin-top: 10px; color: #666; font-weight: bold;">Initializing Neural Network...</div>
+            </div>
+
+            <div class="results" id="results">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+
+        let selectedFile = null;
+        let loadingInterval;
+
+        const loadingPhases = [
+            "Extracting Exif Metadata...",
+            "Running Fast Fourier Transform...",
+            "Analyzing Pixel Saturation...",
+            "Detecting Artificial Noise Patterns...",
+            "Evaluating Deep Learning Features...",
+            "Combining Ensemble Scores..."
+        ];
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            handleFileSelect(e.target.files[0]);
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFileSelect(e.dataTransfer.files[0]);
+        });
+
+        function handleFileSelect(file) {
+            if (!file) return;
+
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/svg+xml'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please select a valid image file (JPG, PNG, or SVG)');
+                return;
+            }
+
+            selectedFile = file;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                results.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Analyze button
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            // Show loading
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            previewContainer.style.display = 'none';
+            
+            // Start dynamic loading text
+            let phaseIndex = 0;
+            document.getElementById('loadingStatusText').innerText = loadingPhases[0];
+            loadingInterval = setInterval(() => {
+                phaseIndex = (phaseIndex + 1) % loadingPhases.length;
+                document.getElementById('loadingStatusText').innerText = loadingPhases[phaseIndex];
+            }, 1500); // Change text every 1.5s
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+
+            try {
+                const response = await fetch('http://localhost:5000/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    alert('Analysis failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error connecting to server: ' + error.message);
+            } finally {
+                clearInterval(loadingInterval);
+                loading.style.display = 'none';
+                previewContainer.style.display = 'block';
+            }
+        });
+
+        function displayResults(data) {
+            const analysis = data.analysis;
+            const finalResult = analysis.final_result;
+            
+            let confidenceBadgeClass = 'badge-medium';
+            if (finalResult.confidence_level === 'High') {
+                confidenceBadgeClass = 'badge-high';
+            } else if (finalResult.confidence_level === 'Low') {
+                confidenceBadgeClass = 'badge-low';
+            }
+
+            results.innerHTML = `
+                <div class="final-verdict">
+                    <div class="verdict-label">Final Classification</div>
+                    <div class="verdict-score">${finalResult.final_score}%</div>
+                    <div style="font-size: 1.8em; margin: 10px 0;">${finalResult.classification}</div>
+                    <span class="confidence-badge ${confidenceBadgeClass}">
+                        ${finalResult.confidence_level} Confidence
+                    </span>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-header">🎯 Component Scores</div>
+                    ${createScoreBar('Deep Learning Model', finalResult.component_scores.model)}
+                    ${createScoreBar('Frequency Analysis', finalResult.component_scores.frequency)}
+                    ${createScoreBar('Noise Analysis', finalResult.component_scores.noise)}
+                    ${createScoreBar('Pixel Statistics', finalResult.component_scores.pixel)}
+                    ${createScoreBar('Metadata Analysis', finalResult.component_scores.metadata)}
+                    ${createScoreBar('Error Level Analysis (ELA)', finalResult.component_scores.ela || 50)}
+                </div>
+
+                <div class="result-card">
+                    <div class="result-header">🤖 Model Prediction</div>
+                    <div class="model-prediction">
+                        <div class="metric">
+                            <span class="metric-name">Predicted Class</span>
+                            <span class="metric-value">${analysis.model_prediction.class}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-name">Model Confidence</span>
+                            <span class="metric-value">${analysis.model_prediction.confidence.toFixed(2)}%</span>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <strong>All Probabilities:</strong>
+                            ${Object.entries(analysis.model_prediction.probabilities)
+                                .map(([cls, prob]) => `
+                                    <div class="probability-item">
+                                        <span>${cls}</span>
+                                        <span>${prob.toFixed(2)}%</span>
+                                    </div>
+                                `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-header">📊 Detailed Analysis</div>
+                    ${createDetailSection('Frequency Analysis', analysis.frequency_analysis)}
+                    ${createDetailSection('Noise Analysis', analysis.noise_analysis)}
+                    ${createDetailSection('Pixel Analysis', analysis.pixel_analysis)}
+                    ${createDetailSection('Metadata Analysis', analysis.metadata_analysis)}
+                </div>
+
+                <div class="result-card">
+                    <div class="result-header">📷 Image Information</div>
+                    <div class="image-info">
+                        <div class="info-item"><strong>Filename:</strong> ${data.image_info.filename}</div>
+                        <div class="info-item"><strong>Format:</strong> ${data.image_info.format}</div>
+                        <div class="info-item"><strong>Dimensions:</strong> ${data.image_info.width} × ${data.image_info.height}</div>
+                        <div class="info-item"><strong>File Size:</strong> ${(data.image_info.file_size / 1024).toFixed(2)} KB</div>
+                    </div>
+                </div>
+            `;
+
+            // --- CHARTS SECTION ---
+            const chartsHTML = `
+                <div class="result-card">
+                    <div class="result-header">📊 Analyzer Score Breakdown (Bar Chart)</div>
+                    <div style="position:relative; height:320px; margin-top:15px;">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                    <div class="result-card" style="flex:1; min-width:300px;">
+                        <div class="result-header">🥧 Classification Probabilities (Pie Chart)</div>
+                        <div style="position:relative; height:300px; margin-top:15px;">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="result-card" style="flex:1; min-width:300px;">
+                        <div class="result-header">🕸️ Component Radar</div>
+                        <div style="position:relative; height:300px; margin-top:15px;">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            results.innerHTML += chartsHTML;
+
+            results.style.display = 'block';
+
+            // Animate score bars
+            setTimeout(() => {
+                document.querySelectorAll('.score-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.score + '%';
+                });
+            }, 100);
+
+            // --- RENDER CHARTS ---
+            setTimeout(() => { renderCharts(analysis, finalResult); }, 200);
+        }
+
+        function createScoreBar(name, score) {
+            return `
+                <div class="metric">
+                    <span class="metric-name">${name}</span>
+                    <span class="metric-value">${score}%</span>
+                </div>
+                <div class="score-bar">
+                    <div class="score-fill" style="width: 0%;" data-score="${score}">
+                        ${score}%
+                    </div>
+                </div>
+            `;
+        }
+
+        function createDetailSection(title, data) {
+            const entries = Object.entries(data)
+                .filter(([key]) => key !== 'confidence' && key !== 'error')
+                .map(([key, value]) => {
+                    const formattedKey = key.replace(/_/g, ' ')
+                        .replace(/\b\w/g, c => c.toUpperCase());
+                    return `
+                        <div class="metric">
+                            <span class="metric-name">${formattedKey}</span>
+                            <span class="metric-value">${value}</span>
+                        </div>
+                    `;
+                }).join('');
+
+            return `
+                <div style="margin-top: 20px;">
+                    <strong>${title}</strong>
+                    <div style="margin-top: 10px;">
+                        ${entries}
+                        <div class="metric" style="background: #e8f5e9;">
+                            <span class="metric-name">Interpretation</span>
+                            <span class="metric-value" style="color: #2e7d32;">${data.confidence}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCharts(analysis, finalResult) {
+            // --- BAR CHART: Individual Analyzer Scores ---
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            const scores = finalResult.component_scores;
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Deep Learning', 'Frequency (FFT)', 'Noise Pattern', 'Pixel Stats', 'Metadata (EXIF)', 'ELA'],
+                    datasets: [{
+                        label: 'Analyzer Score (%)',
+                        data: [scores.model, scores.frequency, scores.noise, scores.pixel, scores.metadata, scores.ela || 50],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(255, 159, 64, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(118, 75, 162, 1)',
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100, title: { display: true, text: 'Score (%)' } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Individual Analyzer Accuracy Scores', font: { size: 14 } }
+                    }
+                }
+            });
+
+            // --- PIE CHART: Classification Probabilities ---
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            const probs = analysis.model_prediction.probabilities;
+            new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(probs),
+                    datasets: [{
+                        data: Object.values(probs),
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.85)',
+                            'rgba(255, 99, 132, 0.85)',
+                            'rgba(54, 162, 235, 0.85)',
+                            'rgba(255, 206, 86, 0.85)',
+                            'rgba(153, 102, 255, 0.85)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Classification Probabilities', font: { size: 14 } },
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // --- RADAR CHART: Component Strength ---
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['DL Model', 'Frequency', 'Noise', 'Pixel', 'Metadata', 'ELA'],
+                    datasets: [{
+                        label: 'Score',
+                        data: [scores.model, scores.frequency, scores.noise, scores.pixel, scores.metadata, scores.ela || 50],
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } }
+                    },
+                    plugins: {
+                        title: { display: true, text: 'Component Analysis Radar', font: { size: 14 } },
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

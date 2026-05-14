@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deepfake Engine Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="container" id="main-container">
+    <div class="header">
+        <h1>Vision Anomaly Matrix</h1>
+        <p>AI Spatial-Temporal Sequence Decoder</p>
+    </div>
+
+    <div class="dropzone" id="dropzone">
+        <svg fill="currentColor" width="48" height="48" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+        <p id="drop-text">Initialize Spatial Scan (Drop Video)</p>
+        <input type="file" id="file-input" class="file-input" accept="video/mp4,video/*">
+        <div class="laser" id="laser"></div>
+    </div>
+
+    <div class="loader-container" id="loader-container">
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring delay"></div>
+        <p id="status-text" class="status-glow">Isolating Neural Signatures...</p>
+    </div>
+
+    <div class="results-panel" id="results">
+        <div class="results-grid">
+            <div class="confidence-box">
+                <div class="ring-container">
+                    <svg width="150" height="150">
+                        <circle class="ring-bg" cx="75" cy="75" r="65"></circle>
+                        <circle class="ring-progress" id="progress-ring" cx="75" cy="75" r="65"></circle>
+                    </svg>
+                    <div class="ring-value" id="ring-value">0%</div>
+                </div>
+                <div class="ring-label" id="ring-label">COMPUTING...</div>
+                <div class="threshold-note" id="threshold-note">Decision threshold: 0.33</div>
+                <div class="decision-band" id="decision-band">Decision band: pending</div>
+                <div class="coverage-note" id="coverage-note">Frame coverage: --</div>
+            </div>
+
+            <div class="timeline-box">
+                <h3>TEMPORAL DELTA MAPPING</h3>
+                <div class="bars-container" id="timeline-bars"></div>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h4>Top Frames</h4>
+                        <div id="top-frames" class="summary-list">No analysis yet.</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Suspicious Segments</h4>
+                        <div id="segments" class="summary-list">No analysis yet.</div>
+                    </div>
+                    <div class="summary-card full-width">
+                        <h4>Warnings</h4>
+                        <div id="warnings" class="summary-list">No warnings.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="download-btn" id="download-btn" style="display:none;">
+        Download Analysis Report (JSON)
+    </button>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
